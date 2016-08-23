@@ -72,16 +72,83 @@ function(req, res) {
   });
 });
 
+
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+// created ourselves
+
+app.get('/users', 
+function(req, res) {
+  Users.reset().fetch().then(function(users) {
+    res.status(200).send(users.models);
+  });
+});
+
+app.post('/signup', function(req, res) {
+  console.log('in signup');
+  var username = req.body.username;
+  var password = req.body.password;
+
+  new User({ username: username, password: password}).fetch().then(function() {
+    Users.create({
+      username: username,
+      password: password
+    });
+  });
+});
+
+//
+
+/*  new Link({ url: uri }).fetch().then(function(found) {
+    if (found) {
+      res.status(200).send(found.attributes);
+    } else {
+      util.getUrlTitle(uri, function(err, title) {
+        if (err) {
+          console.log('Error reading URL heading: ', err);
+          return res.sendStatus(404);
+        }
+
+        Links.create({
+          url: uri,
+          title: title,
+          baseUrl: req.headers.origin
+        })
+        .then(function(newLink) {
+          res.status(200).send(newLink);
+        });
+      });
+    }
+  });
+});
+*/
 app.get('/login', function(req, res) {
   res.render('login');
+});
+
+app.post('/login', function(req, res) {
+  var username = req.body.username;
+  var password = req.body.password;
+  new User({ username: username, password: password }).fetch().then(function(validLogin) {
+
+    console.log('validLog is ', validLogin);
+    if ( validLogin ) {
+      console.log('within if is ', validLogin);
+      res.status(200).redirect('/index');
+
+    } else {
+      // wrong user/pass stay on page
+      // ask for login again
+    }
+  });
 });
 
 app.get('/signup', function(req, res) {
   res.render('signup');
 });
+
+
 
 
 /************************************************************/
