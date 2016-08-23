@@ -2,6 +2,8 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var cookieParser = require('cookie-parser');
+var session = require('express-session');
 
 
 var db = require('./app/config');
@@ -21,20 +23,27 @@ app.use(bodyParser.json());
 // Parse forms (signup/login)
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
+app.use(cookieParser('hmmmm very test-y'));
+app.use(session());
 
+var restrict = function (req, res, next) {
+  if (req.session.user) {
+    next();
+  } else {
+    req.session.error = 'Access denied!';
+    res.redirect(302, '/login');
+  }
+};
 
-app.get('/', 
-function(req, res) {
+app.get('/', restrict, function(req, res) {
   res.render('index');
 });
 
-app.get('/create', 
-function(req, res) {
+app.get('/create', restrict, function(req, res) {
   res.render('index');
 });
 
-app.get('/links', 
-function(req, res) {
+app.get('/links', restrict, function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.status(200).send(links.models);
   });
@@ -76,7 +85,6 @@ function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
-// created ourselves
 
 app.get('/users', 
 function(req, res) {
@@ -86,43 +94,27 @@ function(req, res) {
 });
 
 app.post('/signup', function(req, res) {
-  console.log('in signup');
   var username = req.body.username;
   var password = req.body.password;
 
-  new User({ username: username, password: password}).fetch().then(function() {
-    Users.create({
-      username: username,
-      password: password
-    });
-  });
-});
-
-//
-
-/*  new Link({ url: uri }).fetch().then(function(found) {
-    if (found) {
-      res.status(200).send(found.attributes);
+  new User({ username: username, password: password}).fetch().then(function(existingUser) {
+    if (existingUser) {
+      res.redirect(302, '/signup');
     } else {
-      util.getUrlTitle(uri, function(err, title) {
-        if (err) {
-          console.log('Error reading URL heading: ', err);
-          return res.sendStatus(404);
-        }
-
-        Links.create({
-          url: uri,
-          title: title,
-          baseUrl: req.headers.origin
-        })
-        .then(function(newLink) {
-          res.status(200).send(newLink);
+      Users.create({
+        username: username,
+        password: password
+      })
+      .then(function(newUser) {
+        req.session.regenerate(function() {
+          req.session.user = username;
+          return res.redirect(302, '/');
         });
       });
     }
   });
 });
-*/
+
 app.get('/login', function(req, res) {
   res.render('login');
 });
@@ -131,21 +123,26 @@ app.post('/login', function(req, res) {
   var username = req.body.username;
   var password = req.body.password;
   new User({ username: username, password: password }).fetch().then(function(validLogin) {
-
-    console.log('validLog is ', validLogin);
     if ( validLogin ) {
-      console.log('within if is ', validLogin);
-      res.status(200).redirect('/index');
-
+      req.session.regenerate(function() {
+        req.session.user = username;
+        return res.redirect(302, '/');
+      });
+      
     } else {
-      // wrong user/pass stay on page
-      // ask for login again
+      return res.redirect(302, '/login');
     }
   });
 });
 
 app.get('/signup', function(req, res) {
   res.render('signup');
+});
+
+app.get('/logout', function(req, res) {
+  req.session.destroy(function() {
+    res.redirect('/');
+  });
 });
 
 
