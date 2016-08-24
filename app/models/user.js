@@ -7,24 +7,23 @@ var Promise = require('bluebird');
 var User = db.Model.extend({
   tableName: 'users',
   initialize: function() {
-    this.on('creating', this.hashPassword, this);
+    this.on('creating', this.hashPassword);
   },
   hashPassword: function(model, attrs, options) {
     return new Promise(function(resolve, reject) {
-      var salt = bcrypt.genSaltSync(10);
-      // console.log(salt, 'salt');
-      bcrypt.hash(model.attributes.password, salt, null, function(err, hash) {
+      bcrypt.hash(model.attributes.password, null, null, function(err, hash) {
         if (err) { 
-          console.log(err); 
+          reject(err); 
         }
         model.set('password', hash);
         resolve(hash);
       });
     });
   },
-  getPassword: function() {
-    var test = this.get('password');
-    console.log(test, '<<<<< is the password gotten!');
+  comparePassword: function(attempted, callback) {
+    bcrypt.compare(attempted, this.get('password'), function(err, isMatch) {
+      callback(isMatch);
+    });
   }
 });
 
