@@ -18,15 +18,14 @@ var User = db.Model.extend({
           console.log(err); 
         }
         model.set('password', hash);
-        console.log(model.get('password'), 'hashed password');
         resolve(hash);
       });
     });
+  },
+  getPassword: function() {
+    var test = this.get('password');
+    console.log(test, '<<<<< is the password gotten!');
   }
-  // getPassword: function() {
-  //   var test = this.get('password');
-  //   console.log(test, '<<<<< is the password gotten!');
-  // }
 });
 
 

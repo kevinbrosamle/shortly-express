@@ -4,6 +4,7 @@ var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
+var bcrypt = require('bcrypt-nodejs');
 
 
 var db = require('./app/config');
@@ -122,6 +123,27 @@ app.get('/login', function(req, res) {
 app.post('/login', function(req, res) {
   var username = req.body.username;
   var password = req.body.password;
+  // var salt = bcrypt.genSaltSync(10);
+  /*console.log(password, 'before');
+  bcrypt.hash(password, salt, null, function(err, hash) {
+    if (err) { 
+      console.log(err); 
+    }
+    password = hash;
+    console.log(password,'after');
+  });*/
+
+  User.getPassword();
+  
+  // bcrypt.compare(password, hash, function (err, res) {
+  //   if (err) {
+  //     console.log('comparison false', err);
+  //   } else {
+  //     console.log('comparison is true', res);
+  //   }
+
+  });
+
   new User({ username: username, password: password }).fetch().then(function(validLogin) {
     if ( validLogin ) {
       req.session.regenerate(function() {
